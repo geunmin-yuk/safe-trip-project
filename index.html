@@ -28,9 +28,10 @@
         <!-- 2. 지도와 정보창 영역 -->
         <div class="flex flex-col md:flex-row gap-4">
             <!-- 지도 -->
-            <div id="map" class="w-full md:w-2/3 h-96 md:h-[60vh] bg-white rounded-lg shadow-md">
+            <!-- [수정된 부분!] style="height: 100%;"을 추가하여 지도 공간의 높이를 명확하게 지정해줍니다. -->
+            <div id="map" class="w-full md:w-2/3 h-96 md:h-[60vh] bg-white rounded-lg shadow-md" style="height: 100%;">
                 <div class="flex justify-center items-center h-full text-gray-500">
-                    지도 로딩중... (카카오맵 키가 정확해야 지도가 보입니다!)
+                    지도 로딩중...
                 </div>
             </div>
 
@@ -52,21 +53,16 @@
 
     <!-- 3. 우리 웹사이트의 뇌 (JavaScript) -->
     <script>
-        // kakao.maps.load() 함수는 카카오맵 API가 모두 로드된 후, 안의 함수를 실행시켜줍니다.
-        // 이렇게 하면 'kakao is not defined' 오류를 방지할 수 있습니다.
         kakao.maps.load(() => {
-            // --- 지도 표시하기 ---
             const mapContainer = document.getElementById('map'); 
             const mapOption = { 
-                center: new kakao.maps.LatLng(37.566826, 126.9786567), // 처음 지도의 중심: 서울 시청
-                level: 7 // 처음 지도 확대 레벨
+                center: new kakao.maps.LatLng(37.566826, 126.9786567),
+                level: 7
             };
             const map = new kakao.maps.Map(mapContainer, mapOption); 
             
-            // 지도 위에 표시할 마커들을 담을 배열
             let markers = [];
 
-            // --- 우리만의 작은 아이스박스 (샘플 데이터) ---
             const sampleData = {
                 "설악산": {
                     lat: 38.1193,
@@ -90,14 +86,12 @@
                 }
             };
 
-            // --- 모든 것을 연결하고 움직이게 만들기! ---
             const searchInput = document.getElementById('search-input');
             const searchButton = document.getElementById('search-button');
             const scoreCircle = document.getElementById('score-circle');
             const scoreText = document.getElementById('score-text');
             const infoDetails = document.getElementById('info-details');
 
-            // 검색 실행 함수
             function executeSearch() {
                 const query = searchInput.value;
                 
@@ -109,12 +103,10 @@
                 const result = sampleData[query];
                 
                 if (result) {
-                    // 1. 지도를 검색한 장소로 이동시키기
                     const moveLatLng = new kakao.maps.LatLng(result.lat, result.lng);
                     map.setCenter(moveLatLng);
                     map.setLevel(7);
 
-                    // 2. 점수판 업데이트 하기
                     scoreCircle.textContent = result.score;
                     scoreText.textContent = `${query}의 안전 점수`;
                     let scoreColorClasses = "";
@@ -127,19 +119,16 @@
                     }
                     scoreCircle.className = `mx-auto w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold transition-all duration-500 ${scoreColorClasses}`;
                     
-                    // 3. 기존에 있던 마커(아이콘)들 지우기
                     markers.forEach(marker => marker.setMap(null));
                     markers = [];
 
-                    // 4. 지도에 새로운 아이콘(마커) 표시하기
                     result.facilities.forEach(facility => {
                         const markerPosition  = new kakao.maps.LatLng(facility.lat, facility.lng); 
                         const marker = new kakao.maps.Marker({ position: markerPosition });
                         marker.setMap(map);
-                        markers.push(marker); // 새로 만든 마커를 배열에 추가
+                        markers.push(marker);
                     });
                     
-                    // 5. 상세 정보 업데이트 하기
                     let detailsHtml = '<h3 class="font-bold border-t pt-4 mt-4">주요 안심 시설</h3><ul class="list-disc pl-5 mt-2 text-gray-700 space-y-1">';
                     result.facilities.forEach(facility => {
                         let icon = facility.type === 'hospital' ? '🚑' : (facility.type === 'aed' ? '❤️' : '💊');
@@ -153,10 +142,8 @@
                 }
             }
 
-            // 검색 버튼을 '클릭'하면 검색 실행
             searchButton.addEventListener('click', executeSearch);
 
-            // 엔터 키를 눌러도 검색이 되도록 설정
             searchInput.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
                     executeSearch();
@@ -166,4 +153,3 @@
     </script>
 </body>
 </html>
-
