@@ -27,9 +27,9 @@
         <!-- 2. 지도와 정보창 영역 -->
         <div class="flex flex-col md:flex-row gap-4">
             <!-- 지도 -->
-            <!-- [수정된 부분!] Tailwind 클래스와 함께 style 속성을 직접 추가하여 높이를 보장합니다. -->
-            <div id="map" class="w-full md:w-2/3 bg-white rounded-lg shadow-md" style="height: 60vh;">
-                <!-- 이 안의 내용은 지도가 로드되면 자동으로 덮어씌워집니다. -->
+            <!-- [최종 수정!] 공식 가이드에 따라 높이를 고정된 px 값으로 명확하게 지정합니다. -->
+            <div id="map" class="w-full md:w-2/3 bg-white rounded-lg shadow-md" style="height:500px;">
+                <!-- 이 공간은 스크립트에 의해 지도로 채워집니다. -->
             </div>
 
             <!-- 정보창 -->
