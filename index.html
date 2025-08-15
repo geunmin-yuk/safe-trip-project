@@ -10,6 +10,12 @@
     
     <!-- 카카오맵 API 불러오기 (가장 중요!) -->
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=cb042192382ed6a341ff3f2649753c8f&autoload=false&libraries=services"></script>
+    <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    kakao.maps.load(() => {
+      const mapContainer = document.getElementById('map');
+      const mapOption = { center: new kakao.maps.LatLng(37.566826, 126.9786567), level: 7 };
+      const map = new kakao.maps.Map(mapContainer, mapOption);
 </head>
 <body class="bg-gray-100">
 
@@ -155,4 +161,5 @@
     </script>
 </body>
 </html>
+
 
