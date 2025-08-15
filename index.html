@@ -9,7 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- 카카오맵 API 불러오기 (가장 중요!) -->
-    <!-- YOUR_APP_KEY 부분에 반드시 본인의 자바스크립트 키를 넣어주세요! -->
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=8237f66a88d238129a48fd4a8235315c&libraries=services"></script>
 </head>
 <body class="bg-gray-100">
@@ -28,11 +27,9 @@
         <!-- 2. 지도와 정보창 영역 -->
         <div class="flex flex-col md:flex-row gap-4">
             <!-- 지도 -->
-            <!-- [수정된 부분!] style="height: 100%;"을 추가하여 지도 공간의 높이를 명확하게 지정해줍니다. -->
-            <div id="map" class="w-full md:w-2/3 h-96 md:h-[60vh] bg-white rounded-lg shadow-md" style="height: 100%;">
-                <div class="flex justify-center items-center h-full text-gray-500">
-                    지도 로딩중...
-                </div>
+            <!-- [수정된 부분!] 불필요한 style 속성을 제거하고 Tailwind CSS 클래스만으로 높이를 제어합니다. -->
+            <div id="map" class="w-full md:w-2/3 h-96 md:h-[60vh] bg-white rounded-lg shadow-md">
+                <!-- 이 안의 "지도 로딩중..." 텍스트는 지도가 로드되면 자동으로 사라집니다. -->
             </div>
 
             <!-- 정보창 -->
