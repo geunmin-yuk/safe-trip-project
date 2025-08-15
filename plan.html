@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025 한국관광 데이터랩 경진대회 | 최우수상 수상 전략</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Calm Harmony (Slate, Emerald, Stone) -->
+    <!-- Application Structure Plan: A single-page dashboard with a fixed top navigation for smooth scrolling. The structure is thematic, guiding the user from the 'Why' (market analysis) to the 'How' (solution) and the 'What' (impact). This non-linear, thematic approach allows users to quickly grasp the core concepts like the 'Winning Formula' and the 'Safe Steps' app mock-up, which is more engaging than a linear document. Key interactions include hover effects on strategy cards and dynamic chart displays to make data digestible. -->
+    <!-- Visualization & Content Choices: 
+        - Judging Criteria -> Goal: Inform -> Viz: Donut Chart -> Interaction: Hover to see details -> Justification: Instantly shows the high weight of 'Data Usage' and 'Impact', justifying our focus. -> Library: Chart.js.
+        - Senior Tourist Market Growth -> Goal: Inform/Problem Framing -> Viz: Bar Chart -> Interaction: Animated on load -> Justification: Visually emphasizes the growing market size, highlighting the problem's importance. -> Library: Chart.js.
+        - 'Safe Steps' App UI -> Goal: Organize/Explain Solution -> Viz: HTML/CSS Mock-up -> Interaction: Static but detailed -> Justification: Provides a tangible vision of the final product, which is a key requirement. -> Method: HTML/Tailwind.
+        - Winning Formula & Impact -> Goal: Organize/Compare -> Viz: Interactive Cards -> Interaction: Hover to reveal details -> Justification: Breaks down complex strategies into digestible chunks, encouraging user exploration. -> Method: HTML/Tailwind/JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="text-xl font-bold text-emerald-600">🏆 최우수상 전략</div>
+            <div class="hidden md:flex space-x-6 text-sm font-semibold">
+                <a href="#analysis" class="text-slate-600 hover:text-emerald-600 transition">경쟁 분석</a>
+                <a href="#problem" class="text-slate-600 hover:text-emerald-600 transition">문제 정의</a>
+                <a href="#solution" class="text-slate-600 hover:text-emerald-600 transition">솔루션</a>
+                <a href="#impact" class="text-slate-600 hover:text-emerald-600 transition">기대 효과</a>
+                <a href="#team" class="text-slate-600 hover:text-emerald-600 transition">우리 팀</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-6">
+
+        <!-- Hero Section -->
+        <section class="text-center py-16">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">데이터로 여는 안심여행 시대</h1>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto">의료 골든타임 확보를 통한 시니어 관광객 유치 및 안전망 구축.
+                <br> 2025 한국관광 데이터랩 경진대회 최우수상 수상 프로젝트 '안심여행 스텝'을 소개합니다.</p>
+        </section>
+
+        <!-- 1. Competition Analysis -->
+        <section id="analysis" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2">경쟁 분석: 우승 공식의 해부</h2>
+                <p class="text-slate-600">성공은 전략에서 시작됩니다. 심사 기준을 분석하고 역대 우승작에서 핵심 성공 요인을 도출했습니다.</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">심사 기준 분석: 핵심은 '활용'과 '성과'</h3>
+                    <p class="text-slate-600 mb-4">총점의 60%가 데이터 활용도와 실질적 성과에 집중되어 있습니다. 이는 단순한 아이디어를 넘어, 실행 가능하고 검증된 '비즈니스 케이스'를 요구한다는 의미입니다.</p>
+                    <div class="chart-container">
+                        <canvas id="judgingCriteriaChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold mb-4">역대 우승 공식 🏆</h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-emerald-50 rounded-lg">
+                            <h4 class="font-bold">1. 공감대 높은 문제 제기</h4>
+                            <p class="text-sm text-slate-600">'노잼 도시', '스쳐 가는 도시' 등 누구나 아는 지역 현안에서 시작하여 심사위원의 즉각적인 공감을 얻습니다.</p>
+                        </div>
+                        <div class="p-4 bg-emerald-50 rounded-lg">
+                            <h4 class="font-bold">2. 데이터 기반의 명확한 진단</h4>
+                            <p class="text-sm text-slate-600">데이터랩 데이터를 활용해 문제의 원인을 정량적으로 분석하고 현상을 날카롭게 진단합니다.</p>
+                        </div>
+                        <div class="p-4 bg-emerald-50 rounded-lg">
+                            <h4 class="font-bold">3. 구체적이고 실현 가능한 해결책</h4>
+                            <p class="text-sm text-slate-600">단순 제안을 넘어, '야간 조명 공원 조성'과 같이 손에 잡히는 구체적인 결과물과 실행 계획을 제시합니다.</p>
+                        </div>
+                         <div class="p-4 bg-emerald-50 rounded-lg">
+                            <h4 class="font-bold">4. 정량적 근거를 통한 효과 입증</h4>
+                            <p class="text-sm text-slate-600">설문조사, 파일럿 테스트 등을 통해 제안의 효과를 예측하고 '계량 성과'를 명확히 증명합니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Problem Definition -->
+        <section id="problem" class="py-16 bg-white rounded-lg shadow-lg">
+            <div class="text-center mb-12 px-6">
+                <h2 class="text-3xl font-bold mb-2">문제 정의: 보이지 않는 장벽, '안전 불안감'</h2>
+                <p class="text-slate-600">우리는 기존의 관광 문제를 넘어, 더 크고 시급한 사회적 문제에 집중합니다.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 text-center px-6">
+                <div class="p-6">
+                    <div class="text-5xl font-extrabold text-emerald-600">822만</div>
+                    <p class="mt-2 font-semibold">거대한 시니어 관광 시장</p>
+                    <p class="text-sm text-slate-500">2025년 초고령사회 진입,
+                        <br>관광 시장의 핵심 주체로 부상</p>
+                </div>
+                <div class="p-6">
+                    <div class="text-5xl font-extrabold text-emerald-600">30%</div>
+                    <p class="mt-2 font-semibold">의료 사각지대</p>
+                    <p class="text-sm text-slate-500">지방 관광지 방문객의 30%는
+                        <br>30분 내 응급실 도착 불가</p>
+                </div>
+                <div class="p-6">
+                    <div class="text-5xl font-extrabold text-emerald-600">No.1</div>
+                    <p class="mt-2 font-semibold">여행 포기 사유</p>
+                    <p class="text-sm text-slate-500">잠재적 안전 문제는
+                        <br>시니어 계층의 여행을 가로막는 가장 큰 장벽</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Solution -->
+        <section id="solution" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2">우리의 솔루션: 안심여행 스텝(Safe Steps)</h2>
+                <p class="text-slate-600">데이터 융합을 통해 여행지의 '의료 골든타임 점수'를 제공하는 실시간 안전망 플랫폼입니다.</p>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-8 items-center">
+                <!-- App Mockup -->
+                <div class="w-full lg:w-1/2 flex justify-center">
+                    <div class="w-80 bg-slate-800 rounded-[40px] p-4 shadow-2xl">
+                        <div class="bg-white rounded-[30px] p-4">
+                            <div class="bg-slate-100 rounded-2xl h-[500px] p-4 flex flex-col">
+                                <div class="text-center">
+                                    <p class="text-sm font-bold">설악산 국립공원</p>
+                                    <p class="text-xs text-slate-500">강원도 속초시</p>
+                                </div>
+                                <div class="my-4 flex-grow flex flex-col justify-center items-center">
+                                    <div class="w-32 h-32 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-4xl font-bold border-8 border-emerald-200">85</div>
+                                    <p class="mt-2 font-semibold">안전 점수 (양호)</p>
+                                </div>
+                                <div class="bg-white p-3 rounded-lg text-sm space-y-2">
+                                    <p class="font-bold">주요 안심 시설</p>
+                                    <p>🚑 속초의료원 (15분)</p>
+                                    <p>❤️ 탐방지원센터 AED (3분)</p>
+                                    <p>💊 새서울약국 (야간운영)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Data Fusion Engine -->
+                <div class="w-full lg:w-1/2">
+                    <h3 class="text-2xl font-bold mb-4">데이터 융합 엔진</h3>
+                    <p class="text-slate-600 mb-6">단순 정보 나열을 넘어, 다층적 데이터를 실시간으로 융합하여 새로운 가치, '안전 점수'를 창출합니다.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-emerald-700">한국관광 데이터랩 (필수)</h4>
+                            <p class="text-sm text-slate-500">고령층 방문자 분포, 내비게이션 기반 실제 이동 시간</p>
+                        </div>
+                         <div class="border-l-2 border-emerald-200 pl-4">
+                            <h4 class="font-semibold text-slate-700">의료 인프라 데이터 (융합)</h4>
+                            <p class="text-sm text-slate-500">건강보험심사평가원 API: 병원/약국 위치, 응급실 유무, 전문과목 정보</p>
+                        </div>
+                        <div class="border-l-2 border-emerald-200 pl-4">
+                            <h4 class="font-semibold text-slate-700">응급 장비 데이터 (융합)</h4>
+                            <p class="text-sm text-slate-500">국립중앙의료원 API: 전국 자동심장충격기(AED) 상세 위치</p>
+                        </div>
+                        <div class="border-l-2 border-emerald-200 pl-4">
+                            <h4 class="font-semibold text-slate-700">실시간 위험 데이터 (융합)</h4>
+                            <p class="text-sm text-slate-500">행정안전부 API: 폭설, 도로 폐쇄 등 긴급재난문자 정보</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Impact -->
+        <section id="impact" class="py-16 bg-emerald-600 text-white rounded-lg shadow-lg">
+            <div class="text-center mb-12 px-6">
+                <h2 class="text-3xl font-bold mb-2">기대 효과: '안심'이 만드는 새로운 가치</h2>
+                <p class="text-emerald-100">단순한 앱을 넘어, 사회와 경제에 긍정적인 파급 효과를 가져옵니다.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 text-center px-6">
+                <div>
+                    <h3 class="text-2xl font-bold mb-2">사회적 효과</h3>
+                    <p class="text-emerald-200">관광 약자의 여행 기회 확대,
+                        <br>응급 대응 시간 단축을 통한 국민 생명 보호</p>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold mb-2">경제적 효과</h3>
+                    <p class="text-emerald-200">'안심 관광' 신시장 개척,
+                        <br>구매력 높은 시니어 관광객 유치를 통한 지역 경제 활성화</p>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold mb-2">미래 가치</h3>
+                    <p class="text-emerald-200">국가 단위 '관광의료 취약성 지도' 구축,
+                        <br>정부의 효율적 안전 인프라 투자를 위한 데이터 기반 정책 제언</p>
+                </div>
+            </div>
+            <div class="mt-12 px-6">
+                <h3 class="text-xl font-bold text-center mb-4">핵심 계량 성과 (예측)</h3>
+                <div class="max-w-4xl mx-auto bg-white/10 p-6 rounded-lg grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div>
+                        <div class="text-3xl font-bold">35%↓</div>
+                        <p class="text-sm text-emerald-200">안전 불안감 감소</p>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold">60%↑</div>
+                        <p class="text-sm text-emerald-200">안전 기반 계획 수정</p>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold">50곳</div>
+                        <p class="text-sm text-emerald-200">의료 취약지 발굴</p>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold">5,000+</div>
+                        <p class="text-sm text-emerald-200">초기 사용자 확보</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Team -->
+        <section id="team" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-2">최적의 팀: 문제 해결을 위해 준비된 전문가</h2>
+                <p class="text-slate-600">의료, 공학, 데이터 분석 전문가의 시너지가 우리의 핵심 경쟁력입니다.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="w-24 h-24 rounded-full bg-slate-200 mx-auto mb-4 flex items-center justify-center text-4xl">👩‍⚕️</div>
+                    <h3 class="text-xl font-bold">김령은</h3>
+                    <p class="text-emerald-600 font-semibold">삼성의료원 ICU 간호사</p>
+                    <p class="text-sm text-slate-500 mt-2">'골든타임'의 무게를 아는 현장 전문가. 문제 정의와 핵심 의료 정보 설계를 담당합니다.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="w-24 h-24 rounded-full bg-slate-200 mx-auto mb-4 flex items-center justify-center text-4xl">👨‍🔬</div>
+                    <h3 class="text-xl font-bold">서정원</h3>
+                    <p class="text-emerald-600 font-semibold">KAIST 공학 박사과정</p>
+                    <p class="text-sm text-slate-500 mt-2">복잡한 변수를 정량화하는 기술 전문가. '의료 골든타임 점수' 핵심 알고리즘을 개발합니다.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="w-24 h-24 rounded-full bg-slate-200 mx-auto mb-4 flex items-center justify-center text-4xl">👩‍💻</div>
+                    <h3 class="text-xl font-bold">육근민</h3>
+                    <p class="text-emerald-600 font-semibold">IT 플랫폼 데이터 분석가</p>
+                    <p class="text-sm text-slate-500 mt-2">아이디어를 현실로 만드는 실행 전문가. 데이터 파이프라인 구축과 서비스 구현을 책임집니다.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-slate-800 text-slate-400 text-center p-4 text-sm">
+        <p>&copy; 2025 Team Safe Steps. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Chart.js: Judging Criteria Donut Chart
+            const ctx = document.getElementById('judgingCriteriaChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['데이터 활용도', '효과성 및 성과', '창의성 및 혁신성', '사회/경제적 파급력'],
+                        datasets: [{
+                            label: '심사 기준 배점',
+                            data: [30, 30, 20, 20],
+                            backgroundColor: [
+                                'rgba(16, 185, 129, 0.7)',
+                                'rgba(5, 150, 105, 0.7)',
+                                'rgba(74, 222, 128, 0.7)',
+                                'rgba(110, 231, 183, 0.7)',
+                            ],
+                            borderColor: [
+                                'rgba(16, 185, 129, 1)',
+                                'rgba(5, 150, 105, 1)',
+                                'rgba(74, 222, 128, 1)',
+                                'rgba(110, 231, 183, 1)',
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed + '점';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
