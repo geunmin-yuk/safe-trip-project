@@ -64,14 +64,17 @@
                 const loadingSpinner = document.getElementById('loading-spinner');
                 const searchText = document.getElementById('search-text');
 
-                function calculateSafetyScore(hospitals, aedCount) {
+                // [수정된 부분!] 약국 정보까지 반영하여 점수 계산
+                function calculateSafetyScore(hospitals, aedCount, pharmacyCount) {
                     let score = 0;
-                    // 주변에 응급실이 있으면 70점
+                    // 주변에 응급실이 있으면 60점
                     if (hospitals && hospitals.length > 0) {
-                         score += 70;
+                         score += 60;
                     }
                     // 주변 AED 개수에 따라 최대 30점
                     score += Math.min(aedCount * 10, 30);
+                    // 주변 약국 개수에 따라 최대 10점
+                    score += Math.min(pharmacyCount * 5, 10);
                     return Math.min(score, 100);
                 }
 
@@ -96,16 +99,13 @@
                             map.setCenter(moveLatLng);
                             map.relayout();
 
-                            // 우리 서버(개인 비서)에게 안전 정보 요청!
-                            fetch(`${SERVER_URL}?lat=${lat}&lng=${lng}`)
+                            fetch(`${SERVER_URL}/get-safety-info?lat=${lat}&lng=${lng}`)
                                 .then(response => {
-                                    if (!response.ok) {
-                                        throw new Error('서버 응답이 올바르지 않습니다.');
-                                    }
+                                    if (!response.ok) throw new Error('서버 응답 오류');
                                     return response.json();
                                 })
                                 .then(safetyData => {
-                                    const score = calculateSafetyScore(safetyData.emergencyHospitals, safetyData.aedCount);
+                                    const score = calculateSafetyScore(safetyData.emergencyHospitals, safetyData.aedCount, safetyData.pharmacyCount);
 
                                     scoreCircle.textContent = score;
                                     scoreText.textContent = `${place.place_name} 안전 점수`;
@@ -137,9 +137,11 @@
                                     }); 
                                     circle.setMap(map);
                                     
+                                    // [수정된 부분!] 약국 정보까지 화면에 표시
                                     let detailsHtml = '<h3 class="font-bold border-t pt-4 mt-4">주요 안심 정보</h3><ul class="list-disc pl-5 mt-2 text-gray-700 space-y-1">';
                                     detailsHtml += `<li>🚑 주변 응급실: ${safetyData.emergencyHospitals.length} 곳</li>`;
                                     detailsHtml += `<li>❤️ 주변 AED: ${safetyData.aedCount} 개</li>`;
+                                    detailsHtml += `<li>💊 주변 약국: ${safetyData.pharmacyCount} 개</li>`;
                                     detailsHtml += '</ul>';
                                     infoDetails.innerHTML = detailsHtml;
                                 })
