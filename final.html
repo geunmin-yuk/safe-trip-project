@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>안심여행 스텝</title>
+    
+    <!-- 디자인 마법 (Tailwind CSS) 불러오기 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 카카오맵 API 불러오기 (가장 중요!) -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=cb042192382ed6a341ff3f2649753c8f&libraries=services"></script>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4 max-w-6xl">
+        <!-- 1. 검색창 영역 -->
+        <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+            <h1 class="text-2xl font-bold text-green-600 mb-2">안심여행 스텝 🗺️</h1>
+            <p class="text-gray-600 mb-4">어디로 떠나시나요? 여행지의 안전 점수를 확인해보세요!</p>
+            <div class="flex">
+                <input id="search-input" type="text" placeholder="예: 설악산, 해운대, 제주도, 경주" class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                <button id="search-button" class="bg-green-600 text-white font-bold p-2 rounded-r-lg hover:bg-green-700 w-24 flex items-center justify-center">
+                    <span id="search-text">검색</span>
+                    <svg id="loading-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. 지도와 정보창 영역 -->
+        <!-- [수정된 부분!] HTML 순서를 바꾸고 flex-col-reverse를 유지하여 원하는 반응형 레이아웃을 구현합니다. -->
+        <div class="flex flex-col-reverse md:flex-row gap-4">
+            <!-- 지도 (HTML 순서를 정보창보다 위로 옮겼습니다) -->
+            <div id="map" class="w-full md:w-2/3 bg-white rounded-lg shadow-md" style="height:500px;">
+                <!-- 이 공간은 스크립트에 의해 지도로 채워집니다. -->
+            </div>
+
+            <!-- 정보창 -->
+            <div id="info-window" class="w-full md:w-1/3 bg-white p-4 rounded-lg shadow-md flex flex-col">
+                <h2 class="text-xl font-bold mb-4 text-center">안전 정보</h2>
+                <div class="text-center p-4 flex-grow flex flex-col justify-center">
+                    <div id="score-circle" class="mx-auto w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold bg-gray-200 text-gray-500 transition-all duration-500">
+                        ?
+                    </div>
+                    <p id="score-text" class="mt-2 font-semibold text-gray-600">장소를 검색해주세요</p>
+                </div>
+                <div id="info-details" class="mt-4">
+                    <!-- 검색 결과가 여기에 표시됩니다. -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 우리 웹사이트의 뇌 (JavaScript) -->
+    <script>
+        kakao.maps.load(() => {
+            setTimeout(() => {
+                const mapContainer = document.getElementById('map'); 
+                const mapOption = { 
+                    center: new kakao.maps.LatLng(37.566826, 126.9786567),
+                    level: 7
+                };
+                const map = new kakao.maps.Map(mapContainer, mapOption); 
+                
+                let markers = [];
+                let circle = null;
+
+                const sampleData = {
+                    "설악산": {
+                        lat: 38.1193, lng: 128.4659, score: 85,
+                        facilities: [
+                            { name: '속초의료원 (응급실)', type: 'hospital', lat: 38.1825, lng: 128.5771 },
+                            { name: '설악산 탐방지원센터 AED', type: 'aed', lat: 38.1190, lng: 128.4655 },
+                            { name: '새서울약국 (야간운영)', type: 'pharmacy', lat: 38.2050, lng: 128.5912 }
+                        ]
+                    },
+                    "해운대": {
+                        lat: 35.1587, lng: 129.1604, score: 92,
+                        facilities: [
+                            { name: '해운대백병원 (응급실)', type: 'hospital', lat: 35.1687, lng: 129.1793 },
+                            { name: '해운대 해수욕장 관광안내소 AED', type: 'aed', lat: 35.1580, lng: 129.1590 },
+                            { name: '대우약국', type: 'pharmacy', lat: 35.1611, lng: 129.1623}
+                        ]
+                    },
+                    "제주도": {
+                        lat: 33.3617, lng: 126.5292, score: 78, // 한라산 기준
+                        facilities: [
+                            { name: '제주대학교병원 (권역응급의료센터)', type: 'hospital', lat: 33.4698, lng: 126.5435 },
+                            { name: '한라산 성판악 탐방안내소 AED', type: 'aed', lat: 33.3817, lng: 126.6158 },
+                            { name: '제주시 연동 공공심야약국', type: 'pharmacy', lat: 33.4886, lng: 126.4951}
+                        ]
+                    },
+                    "경주": {
+                        lat: 35.7905, lng: 129.3321, score: 88, // 불국사 기준
+                        facilities: [
+                            { name: '동국대학교 경주병원 (응급실)', type: 'hospital', lat: 35.8341, lng: 129.2841 },
+                            { name: '불국사 관광안내소 AED', type: 'aed', lat: 35.7900, lng: 129.3325 },
+                            { name: '새마을약국', type: 'pharmacy', lat: 35.7933, lng: 129.3292}
+                        ]
+                    }
+                };
+
+                const searchInput = document.getElementById('search-input');
+                const searchButton = document.getElementById('search-button');
+                const scoreCircle = document.getElementById('score-circle');
+                const scoreText = document.getElementById('score-text');
+                const infoDetails = document.getElementById('info-details');
+                const loadingSpinner = document.getElementById('loading-spinner');
+                const searchText = document.getElementById('search-text');
+
+                function executeSearch() {
+                    const query = searchInput.value;
+                    if (!query) {
+                        alert("검색어를 입력해주세요.");
+                        return;
+                    }
+
+                    searchText.classList.add('hidden');
+                    loadingSpinner.classList.remove('hidden');
+                    searchButton.disabled = true;
+
+                    setTimeout(() => {
+                        const result = sampleData[query];
+                        
+                        if (result) {
+                            const moveLatLng = new kakao.maps.LatLng(result.lat, result.lng);
+                            map.setCenter(moveLatLng);
+                            map.relayout();
+
+                            scoreCircle.textContent = result.score;
+                            scoreText.textContent = `${query}의 안전 점수`;
+                            let scoreColorClasses = "";
+                            if (result.score >= 80) scoreColorClasses = "bg-green-100 text-green-600";
+                            else if (result.score >= 50) scoreColorClasses = "bg-yellow-100 text-yellow-600";
+                            else scoreColorClasses = "bg-red-100 text-red-600";
+                            scoreCircle.className = `mx-auto w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold transition-all duration-500 ${scoreColorClasses}`;
+                            
+                            markers.forEach(marker => marker.setMap(null));
+                            markers = [];
+                            result.facilities.forEach(facility => {
+                                const markerPosition  = new kakao.maps.LatLng(facility.lat, facility.lng); 
+                                const marker = new kakao.maps.Marker({ position: markerPosition });
+                                marker.setMap(map);
+                                markers.push(marker);
+                            });
+
+                            if (circle) circle.setMap(null);
+                            circle = new kakao.maps.Circle({
+                                center : moveLatLng,
+                                radius: 5000,
+                                strokeWeight: 3,
+                                strokeColor: '#10B981',
+                                strokeOpacity: 0.8,
+                                fillStyle: 'solid',
+                                fillColor: '#10B981',
+                                fillOpacity: 0.1
+                            }); 
+                            circle.setMap(map);
+                            
+                            let detailsHtml = '<h3 class="font-bold border-t pt-4 mt-4">주요 안심 시설</h3><ul class="list-disc pl-5 mt-2 text-gray-700 space-y-1">';
+                            result.facilities.forEach(facility => {
+                                let icon = facility.type === 'hospital' ? '🚑' : (facility.type === 'aed' ? '❤️' : '💊');
+                                detailsHtml += `<li>${icon} ${facility.name}</li>`;
+                            });
+                            detailsHtml += '</ul>';
+                            infoDetails.innerHTML = detailsHtml;
+
+                        } else {
+                            alert("죄송합니다. 해당 장소의 데이터가 없습니다.\n'설악산', '해운대', '제주도', '경주'로 검색해보세요.");
+                        }
+
+                        searchText.classList.remove('hidden');
+                        loadingSpinner.classList.add('hidden');
+                        searchButton.disabled = false;
+                    }, 500);
+                }
+
+                searchButton.addEventListener('click', executeSearch);
+                searchInput.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') executeSearch();
+                });
+
+            }, 100);
+        });
+    </script>
+</body>
+</html>
