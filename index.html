@@ -5,40 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>안심여행 스텝</title>
     
-    <!-- 디자인 마법 (Tailwind CSS) 불러오기 -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 카카오맵 API 불러오기 (가장 중요!) -->
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=cb042192382ed6a341ff3f2649753c8f&libraries=services"></script>
 </head>
 <body class="bg-gray-100">
 
     <div class="container mx-auto p-4 max-w-6xl">
-        <!-- 1. 검색창 영역 -->
         <div class="bg-white p-4 rounded-lg shadow-md mb-4">
             <h1 class="text-2xl font-bold text-green-600 mb-2">안심여행 스텝 🗺️</h1>
             <p class="text-gray-600 mb-4">어디로 떠나시나요? 여행지의 안전 점수를 확인해보세요!</p>
-            <div class="flex">
-                <input id="search-input" type="text" placeholder="예: 설악산, 해운대, 제주도, 경주" class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                <button id="search-button" class="bg-green-600 text-white font-bold p-2 rounded-r-lg hover:bg-green-700 w-24 flex items-center justify-center">
+            <div class="flex gap-2">
+                <input id="search-input" type="text" placeholder="예: 경복궁, 해운대, 충남대학교" class="flex-grow p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                <button id="search-button" class="bg-green-600 text-white font-bold p-2 rounded-lg hover:bg-green-700 w-24 flex items-center justify-center">
                     <span id="search-text">검색</span>
                     <svg id="loading-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 </button>
+                <!-- Phase 3: 현재 위치 버튼 추가 -->
+                <button id="location-button" class="bg-blue-600 text-white font-bold p-2 rounded-lg hover:bg-blue-700 flex items-center justify-center px-4">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    내 위치
+                </button>
             </div>
         </div>
 
-        <!-- 2. 지도와 정보창 영역 -->
-        <!-- [수정된 부분!] HTML 순서를 바꾸고 flex-col-reverse를 유지하여 원하는 반응형 레이아웃을 구현합니다. -->
         <div class="flex flex-col-reverse md:flex-row gap-4">
-            <!-- 지도 (HTML 순서를 정보창보다 위로 옮겼습니다) -->
             <div id="map" class="w-full md:w-2/3 bg-white rounded-lg shadow-md" style="height:500px;">
-                <!-- 이 공간은 스크립트에 의해 지도로 채워집니다. -->
             </div>
 
-            <!-- 정보창 -->
             <div id="info-window" class="w-full md:w-1/3 bg-white p-4 rounded-lg shadow-md flex flex-col">
                 <h2 class="text-xl font-bold mb-4 text-center">안전 정보</h2>
                 <div class="text-center p-4 flex-grow flex flex-col justify-center">
@@ -48,13 +48,11 @@
                     <p id="score-text" class="mt-2 font-semibold text-gray-600">장소를 검색해주세요</p>
                 </div>
                 <div id="info-details" class="mt-4">
-                    <!-- 검색 결과가 여기에 표시됩니다. -->
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 3. 우리 웹사이트의 뇌 (JavaScript) -->
     <script>
         kakao.maps.load(() => {
             setTimeout(() => {
@@ -65,123 +63,345 @@
                 };
                 const map = new kakao.maps.Map(mapContainer, mapOption); 
                 
-                let markers = [];
-                let circle = null;
-
-                const sampleData = {
-                    "설악산": {
-                        lat: 38.1193, lng: 128.4659, score: 85,
-                        facilities: [
-                            { name: '속초의료원 (응급실)', type: 'hospital', lat: 38.1825, lng: 128.5771 },
-                            { name: '설악산 탐방지원센터 AED', type: 'aed', lat: 38.1190, lng: 128.4655 },
-                            { name: '새서울약국 (야간운영)', type: 'pharmacy', lat: 38.2050, lng: 128.5912 }
-                        ]
-                    },
-                    "해운대": {
-                        lat: 35.1587, lng: 129.1604, score: 92,
-                        facilities: [
-                            { name: '해운대백병원 (응급실)', type: 'hospital', lat: 35.1687, lng: 129.1793 },
-                            { name: '해운대 해수욕장 관광안내소 AED', type: 'aed', lat: 35.1580, lng: 129.1590 },
-                            { name: '대우약국', type: 'pharmacy', lat: 35.1611, lng: 129.1623}
-                        ]
-                    },
-                    "제주도": {
-                        lat: 33.3617, lng: 126.5292, score: 78, // 한라산 기준
-                        facilities: [
-                            { name: '제주대학교병원 (권역응급의료센터)', type: 'hospital', lat: 33.4698, lng: 126.5435 },
-                            { name: '한라산 성판악 탐방안내소 AED', type: 'aed', lat: 33.3817, lng: 126.6158 },
-                            { name: '제주시 연동 공공심야약국', type: 'pharmacy', lat: 33.4886, lng: 126.4951}
-                        ]
-                    },
-                    "경주": {
-                        lat: 35.7905, lng: 129.3321, score: 88, // 불국사 기준
-                        facilities: [
-                            { name: '동국대학교 경주병원 (응급실)', type: 'hospital', lat: 35.8341, lng: 129.2841 },
-                            { name: '불국사 관광안내소 AED', type: 'aed', lat: 35.7900, lng: 129.3325 },
-                            { name: '새마을약국', type: 'pharmacy', lat: 35.7933, lng: 129.3292}
-                        ]
-                    }
+                // Phase 2: 마커 관리를 위한 배열 및 아이콘 설정
+                let currentMarkers = [];
+                
+                const icons = {
+                    aed: new kakao.maps.MarkerImage(
+                        'https://emojigraph.org/media/twitter/red-heart_2764-fe0f.png',
+                        new kakao.maps.Size(30, 30),
+                        { offset: new kakao.maps.Point(15, 15) }
+                    ),
+                    er: new kakao.maps.MarkerImage(
+                        'https://emojigraph.org/media/twitter/ambulance_1f691.png',
+                        new kakao.maps.Size(35, 35),
+                        { offset: new kakao.maps.Point(17, 17) }
+                    ),
+                    location: new kakao.maps.MarkerImage(
+                        'https://emojigraph.org/media/twitter/round-pushpin_1f4cd.png',
+                        new kakao.maps.Size(35, 35),
+                        { offset: new kakao.maps.Point(17, 35) }
+                    )
                 };
 
+                // HTML 요소 가져오기
                 const searchInput = document.getElementById('search-input');
                 const searchButton = document.getElementById('search-button');
+                const locationButton = document.getElementById('location-button');
                 const scoreCircle = document.getElementById('score-circle');
                 const scoreText = document.getElementById('score-text');
                 const infoDetails = document.getElementById('info-details');
                 const loadingSpinner = document.getElementById('loading-spinner');
                 const searchText = document.getElementById('search-text');
 
-                function executeSearch() {
-                    const query = searchInput.value;
-                    if (!query) {
-                        alert("검색어를 입력해주세요.");
-                        return;
+                // Phase 2: 모든 마커를 지도에서 제거하는 함수
+                function clearMarkers() {
+                    for (let i = 0; i < currentMarkers.length; i++) {
+                        currentMarkers[i].setMap(null);
                     }
+                    currentMarkers = [];
+                }
 
+                // Phase 2: 마커와 인포윈도우를 생성하고 지도에 표시하는 함수
+                function displayMarkers(places, type) {
+                    if (!places || places.length === 0) return;
+
+                    const image = icons[type];
+                    const bounds = new kakao.maps.LatLngBounds();
+
+                    places.forEach(place => {
+                        const position = new kakao.maps.LatLng(place.lat, place.lon);
+                        
+                        const marker = new kakao.maps.Marker({
+                            map: map,
+                            position: position,
+                            image: image
+                        });
+
+                        const infowindow = new kakao.maps.InfoWindow({
+                            content: `<div style="padding:5px;font-size:12px;">${place.name}</div>`,
+                            removable: true
+                        });
+
+                        kakao.maps.event.addListener(marker, 'click', function() {
+                            infowindow.open(map, marker);
+                        });
+                        
+                        currentMarkers.push(marker);
+                        bounds.extend(position);
+                    });
+
+                    return bounds;
+                }
+
+                // 특정 장소의 안전 점수를 가져오는 함수 (좌표 파라미터 추가)
+                async function getScoreForSpot(spotName, lat = null, lon = null) {
                     searchText.classList.add('hidden');
                     loadingSpinner.classList.remove('hidden');
                     searchButton.disabled = true;
 
-                    setTimeout(() => {
-                        const result = sampleData[query];
+                    try {
+                        // Phase 3: 좌표가 있으면 좌표 사용, 없으면 장소명 사용
+                        let url = 'http://127.0.0.1:5000/api/score';
+                        if (lat && lon) {
+                            url += `?lat=${lat}&lon=${lon}`;
+                        } else {
+                            url += `?query=${encodeURIComponent(spotName)}`;
+                        }
                         
-                        if (result) {
-                            const moveLatLng = new kakao.maps.LatLng(result.lat, result.lng);
-                            map.setCenter(moveLatLng);
-                            map.relayout();
-
-                            scoreCircle.textContent = result.score;
-                            scoreText.textContent = `${query}의 안전 점수`;
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error('서버 응답 실패');
+                        
+                        const result = await response.json();
+                        if (result.error) {
+                            alert(`오류: ${result.error}`);
+                            infoDetails.innerHTML = ''; 
+                        } else {
+                            // 화면 업데이트
+                            scoreCircle.textContent = result.safety_score;
+                            scoreText.textContent = `${result.searched_location}의 안전 점수`;
+                            
                             let scoreColorClasses = "";
-                            if (result.score >= 80) scoreColorClasses = "bg-green-100 text-green-600";
-                            else if (result.score >= 50) scoreColorClasses = "bg-yellow-100 text-yellow-600";
+                            if (result.safety_score >= 80) scoreColorClasses = "bg-green-100 text-green-600";
+                            else if (result.safety_score >= 50) scoreColorClasses = "bg-yellow-100 text-yellow-600";
                             else scoreColorClasses = "bg-red-100 text-red-600";
                             scoreCircle.className = `mx-auto w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold transition-all duration-500 ${scoreColorClasses}`;
                             
-                            markers.forEach(marker => marker.setMap(null));
-                            markers = [];
-                            result.facilities.forEach(facility => {
-                                const markerPosition  = new kakao.maps.LatLng(facility.lat, facility.lng); 
-                                const marker = new kakao.maps.Marker({ position: markerPosition });
-                                marker.setMap(map);
-                                markers.push(marker);
-                            });
-
-                            if (circle) circle.setMap(null);
-                            circle = new kakao.maps.Circle({
-                                center : moveLatLng,
-                                radius: 5000,
-                                strokeWeight: 3,
-                                strokeColor: '#10B981',
-                                strokeOpacity: 0.8,
-                                fillStyle: 'solid',
-                                fillColor: '#10B981',
-                                fillOpacity: 0.1
-                            }); 
-                            circle.setMap(map);
+                            let travelTimeText = result.travel_time_seconds > 0 ? 
+                                `${Math.floor(result.travel_time_seconds / 60)}분 ${result.travel_time_seconds % 60}초` : '정보 없음';
                             
-                            let detailsHtml = '<h3 class="font-bold border-t pt-4 mt-4">주요 안심 시설</h3><ul class="list-disc pl-5 mt-2 text-gray-700 space-y-1">';
-                            result.facilities.forEach(facility => {
-                                let icon = facility.type === 'hospital' ? '🚑' : (facility.type === 'aed' ? '❤️' : '💊');
-                                detailsHtml += `<li>${icon} ${facility.name}</li>`;
-                            });
+                            let detailsHtml = '<h3 class="font-bold border-t pt-4 mt-4">주요 안심 정보</h3><ul class="list-disc pl-5 mt-2 text-gray-700 space-y-1">';
+                            detailsHtml += `<li>🚑 가장 가까운 응급실: ${travelTimeText} (${result.nearest_er})</li>`;
+                            detailsHtml += `<li>❤️ 주변 AED 개수: ${result.nearby_aeds_total}개</li>`;
                             detailsHtml += '</ul>';
                             infoDetails.innerHTML = detailsHtml;
 
-                        } else {
-                            alert("죄송합니다. 해당 장소의 데이터가 없습니다.\n'설악산', '해운대', '제주도', '경주'로 검색해보세요.");
-                        }
+                            // Phase 2: 지도 시각화
+                            clearMarkers();
+                            const bounds = new kakao.maps.LatLngBounds();
 
+                            // 검색된 위치 마커
+                            const locationPosition = new kakao.maps.LatLng(result.location_lat, result.location_lon);
+                            const locationMarker = new kakao.maps.Marker({
+                                map: map,
+                                position: locationPosition,
+                                image: icons.location
+                            });
+                            currentMarkers.push(locationMarker);
+                            bounds.extend(locationPosition);
+
+                            // AED 마커
+                            if (result.aeds && result.aeds.length > 0) {
+                                displayMarkers(result.aeds, 'aed');
+                                result.aeds.forEach(aed => bounds.extend(new kakao.maps.LatLng(aed.lat, aed.lon)));
+                            }
+
+                            // 병원 마커
+                            if (result.ers && result.ers.length > 0) {
+                                displayMarkers(result.ers, 'er');
+                                result.ers.forEach(er => bounds.extend(new kakao.maps.LatLng(er.lat, er.lon)));
+                            }
+                            
+                            map.setBounds(bounds);
+                            map.relayout();
+                        }
+                    } catch (error) {
+                        console.error('Fetch Error:', error);
+                        alert("데이터를 불러오는 데 실패했습니다.");
+                    } finally {
                         searchText.classList.remove('hidden');
                         loadingSpinner.classList.add('hidden');
                         searchButton.disabled = false;
-                    }, 500);
+                    }
                 }
 
+                // Phase 3: 현재 위치 가져오기 함수
+                function getCurrentLocation() {
+                    if (!navigator.geolocation) {
+                        alert("브라우저가 위치 정보를 지원하지 않습니다.");
+                        return;
+                    }
+
+                    locationButton.disabled = true;
+                    locationButton.textContent = "위치 확인 중...";
+
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            
+                            // 현재 위치로 지도 이동
+                            const currentPos = new kakao.maps.LatLng(lat, lon);
+                            map.setCenter(currentPos);
+                            map.setLevel(5);
+                            
+                            // 안전 점수 계산
+                            getScoreForSpot("현재 위치", lat, lon);
+                            
+                            locationButton.disabled = false;
+                            locationButton.innerHTML = `<svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>내 위치`;
+                        },
+                        (error) => {
+                            let errorMsg = "위치를 가져올 수 없습니다.";
+                            switch(error.code) {
+                                case error.PERMISSION_DENIED:
+                                    errorMsg = "위치 권한이 거부되었습니다.";
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    errorMsg = "위치 정보를 사용할 수 없습니다.";
+                                    break;
+                                case error.TIMEOUT:
+                                    errorMsg = "위치 요청이 시간 초과되었습니다.";
+                                    break;
+                            }
+                            alert(errorMsg);
+                            locationButton.disabled = false;
+                            locationButton.innerHTML = `<svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>내 위치`;
+                        }
+                    );
+                }
+
+                // 메인 검색 함수 - Phase 1 개선
+                async function executeSearch() {
+                    const query = searchInput.value.trim();
+                    if (!query) {
+                        alert("검색어를 입력해주세요.");
+                        return;
+                    }
+                    
+                    console.log(`🔍 Phase 1: "${query}" 검색 시작`);
+                    searchText.classList.add('hidden');
+                    loadingSpinner.classList.remove('hidden');
+                    searchButton.disabled = true;
+                    
+                    // 상태 메시지 표시
+                    scoreText.textContent = "인기 관광지를 검색 중입니다...";
+                    scoreCircle.textContent = "🔍";
+
+                    try {
+                        // Phase 1: 인기 관광지 검색
+                        console.log('📍 인기 관광지 API 호출...');
+                        const spotsResponse = await fetch(`http://127.0.0.1:5000/api/popular-spots?query=${encodeURIComponent(query)}`);
+                        
+                        if (!spotsResponse.ok) {
+                            throw new Error(`서버 응답 오류: ${spotsResponse.status}`);
+                        }
+                        
+                        const spots = await spotsResponse.json();
+                        console.log(`✅ 검색 결과: ${spots.length}개 관광지 발견`);
+
+                        if (spots.length > 0) {
+                            // Phase 1: 인기 관광지 목록 표시
+                            scoreText.textContent = `"${query}" 지역의 인기 관광지`;
+                            scoreCircle.textContent = "📍";
+                            
+                            let spotsHtml = '<h3 class="font-bold text-green-600 border-t pt-4 mt-4">🏆 인기 관광지를 선택하세요</h3>';
+                            spotsHtml += '<p class="text-sm text-gray-500 mb-2">클릭하면 해당 장소의 안전도를 확인할 수 있습니다</p>';
+                            spotsHtml += '<div class="flex flex-col space-y-2">';
+                            
+                            spots.forEach((spot, index) => {
+                                spotsHtml += `
+                                    <button class="spot-button w-full text-left p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg hover:from-green-100 hover:to-blue-100 transition-all shadow-sm hover:shadow-md" 
+                                            data-spot-name="${spot.title}">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span class="font-semibold text-gray-800">${index + 1}. ${spot.title}</span>
+                                                ${spot.address ? `<div class="text-xs text-gray-500 mt-1">📍 ${spot.address}</div>` : ''}
+                                            </div>
+                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                        </div>
+                                    </button>
+                                `;
+                            });
+                            
+                            spotsHtml += '</div>';
+                            spotsHtml += `
+                                <div class="mt-4 p-3 bg-yellow-50 rounded-lg">
+                                    <p class="text-xs text-yellow-800">
+                                        💡 Tip: 직접 장소명을 입력하셔도 안전도를 확인할 수 있습니다
+                                    </p>
+                                </div>
+                            `;
+                            infoDetails.innerHTML = spotsHtml;
+                            
+                            // 각 버튼에 이벤트 리스너 추가
+                            document.querySelectorAll('.spot-button').forEach(button => {
+                                button.addEventListener('click', (event) => {
+                                    const spotButton = event.currentTarget;
+                                    const spotName = spotButton.getAttribute('data-spot-name');
+                                    console.log(`📍 "${spotName}" 선택됨`);
+                                    
+                                    // 선택된 버튼 표시
+                                    document.querySelectorAll('.spot-button').forEach(btn => {
+                                        btn.classList.remove('bg-green-100');
+                                    });
+                                    spotButton.classList.add('bg-green-100');
+                                    
+                                    // 안전 점수 계산
+                                    getScoreForSpot(spotName);
+                                });
+                            });
+                            
+                        } else {
+                            // 인기 관광지가 없으면 직접 검색
+                            console.log('⚠️ 인기 관광지 없음, 직접 검색 진행');
+                            scoreText.textContent = `"${query}" 직접 검색 중...`;
+                            
+                            // 안내 메시지 표시
+                            infoDetails.innerHTML = `
+                                <div class="p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-sm text-blue-800">
+                                        🔍 "${query}"의 인기 관광지를 찾을 수 없어 직접 검색합니다...
+                                    </p>
+                                </div>
+                            `;
+                            
+                            // 직접 장소 검색
+                            setTimeout(() => {
+                                getScoreForSpot(query);
+                            }, 500);
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ Phase 1 오류:', error);
+                        
+                        // 오류 발생 시 직접 검색으로 폴백
+                        infoDetails.innerHTML = `
+                            <div class="p-4 bg-orange-50 rounded-lg mb-4">
+                                <p class="text-sm text-orange-800">
+                                    ⚠️ 인기 관광지 검색 중 문제가 발생했습니다.<br>
+                                    직접 장소를 검색합니다...
+                                </p>
+                            </div>
+                        `;
+                        
+                        // 직접 검색 시도
+                        setTimeout(() => {
+                            getScoreForSpot(query);
+                        }, 1000);
+                        
+                    } finally {
+                        searchText.classList.remove('hidden');
+                        loadingSpinner.classList.add('hidden');
+                        searchButton.disabled = false;
+                    }
+                }
+
+                // 이벤트 리스너
                 searchButton.addEventListener('click', executeSearch);
                 searchInput.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') executeSearch();
                 });
+                // Phase 3: 현재 위치 버튼 이벤트 리스너
+                locationButton.addEventListener('click', getCurrentLocation);
 
             }, 100);
         });
