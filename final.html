@@ -56,18 +56,15 @@
     <!-- 3. 우리 웹사이트의 뇌 (JavaScript) -->
     <script>
         kakao.maps.load(() => {
-            // 지도 초기화 (setTimeout은 안정적인 로딩을 위해 유지)
             setTimeout(() => {
                 const mapContainer = document.getElementById('map'); 
                 const mapOption = { 
-                    center: new kakao.maps.LatLng(37.566826, 126.9786567), // 서울 중심
+                    center: new kakao.maps.LatLng(37.566826, 126.9786567),
                     level: 7
                 };
                 const map = new kakao.maps.Map(mapContainer, mapOption); 
                 
-                // 마커와 원을 관리할 변수
                 let markers = [];
-                let circle = null;
 
                 // HTML 요소 가져오기
                 const searchInput = document.getElementById('search-input');
@@ -80,6 +77,7 @@
 
                 // --- 새로운 함수: 특정 장소의 안전 점수를 가져오는 함수 ---
                 async function getScoreForSpot(spotName) {
+                    // 점수 조회 시에는 검색창과 버튼을 다시 로딩 상태로 만듭니다.
                     searchText.classList.add('hidden');
                     loadingSpinner.classList.remove('hidden');
                     searchButton.disabled = true;
@@ -106,10 +104,6 @@
                             else scoreColorClasses = "bg-red-100 text-red-600";
                             scoreCircle.className = `mx-auto w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold transition-all duration-500 ${scoreColorClasses}`;
                             
-                            markers.forEach(marker => marker.setMap(null));
-                            markers = [];
-                            if (circle) circle.setMap(null);
-
                             let travelTimeText = result.travel_time_seconds > 0 ? 
                                 `${Math.floor(result.travel_time_seconds / 60)}분 ${result.travel_time_seconds % 60}초` : '정보 없음';
                             
@@ -140,41 +134,47 @@
                     loadingSpinner.classList.remove('hidden');
                     searchButton.disabled = true;
 
-                    // 1. 인기 관광지 목록을 먼저 요청
-                    const spotsResponse = await fetch(`http://127.0.0.1:5000/api/popular-spots?query=${encodeURIComponent(query)}`);
-                    const spots = await spotsResponse.json();
+                    try {
+                        // 1. 인기 관광지 목록을 먼저 요청
+                        const spotsResponse = await fetch(`http://127.0.0.1:5000/api/popular-spots?query=${encodeURIComponent(query)}`);
+                        const spots = await spotsResponse.json();
 
-                    if (spots.length > 0) {
-                        // 2. 관광지 목록을 버튼으로 표시
-                        let spotsHtml = '<h3 class="font-bold border-t pt-4 mt-4">이런 장소는 어떠세요?</h3><div class="flex flex-col space-y-2 mt-2">';
-                        spots.forEach(spot => {
-                            // 각 버튼에 spot의 이름을 데이터로 저장
-                            spotsHtml += `<button class="spot-button w-full text-left p-2 bg-gray-100 rounded hover:bg-green-100" data-spot-name="${spot.title}">${spot.title}</button>`;
-                        });
-                        spotsHtml += '</div>';
-                        infoDetails.innerHTML = spotsHtml;
-                        
-                        // 3. 동적으로 생성된 버튼에 클릭 이벤트 추가
-                        document.querySelectorAll('.spot-button').forEach(button => {
-                            button.addEventListener('click', (event) => {
-                                const spotName = event.target.getAttribute('data-spot-name');
-                                getScoreForSpot(spotName); // 점수 조회 함수 호출
+                        if (spots.length > 0) {
+                            // 2. 관광지 목록을 버튼으로 표시
+                            let spotsHtml = '<h3 class="font-bold border-t pt-4 mt-4">이런 장소는 어떠세요?</h3><div class="flex flex-col space-y-2 mt-2">';
+                            spots.forEach(spot => {
+                                // 각 버튼에 spot의 이름을 데이터로 저장
+                                spotsHtml += `<button class="spot-button w-full text-left p-2 bg-gray-100 rounded hover:bg-green-100" data-spot-name="${spot.title}">${spot.title}</button>`;
                             });
-                        });
+                            spotsHtml += '</div>';
+                            infoDetails.innerHTML = spotsHtml;
+                            
+                            // 3. 동적으로 생성된 버튼에 클릭 이벤트 추가
+                            document.querySelectorAll('.spot-button').forEach(button => {
+                                button.addEventListener('click', (event) => {
+                                    const spotName = event.target.getAttribute('data-spot-name');
+                                    getScoreForSpot(spotName); // 점수 조회 함수 호출
+                                });
+                            });
+                            // 관광지 목록만 보여주고 로딩 상태 해제
+                            searchText.classList.remove('hidden');
+                            loadingSpinner.classList.add('hidden');
+                            searchButton.disabled = false;
 
-                        // 로딩 종료는 getScoreForSpot 함수에서 처리하므로 여기서는 별도로 처리하지 않음
-                        // 단, 관광지 목록만 보여주고 멈추므로 로딩 상태를 풀어줘야 함
+                        } else {
+                            // 4. 인기 관광지가 없으면 바로 점수 조회
+                            getScoreForSpot(query);
+                        }
+                    } catch (error) {
+                        console.error('Popular spots fetch error:', error);
+                        alert("인기 관광지 정보를 불러오는 데 실패했습니다. 직접 장소명을 입력해보세요.");
+                        // 실패 시에도 로딩 상태 해제
                         searchText.classList.remove('hidden');
                         loadingSpinner.classList.add('hidden');
                         searchButton.disabled = false;
-
-                    } else {
-                        // 4. 인기 관광지가 없으면 바로 점수 조회
-                        getScoreForSpot(query);
                     }
                 }
 
-                // 이벤트 리스너 연결
                 searchButton.addEventListener('click', executeSearch);
                 searchInput.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') executeSearch();
