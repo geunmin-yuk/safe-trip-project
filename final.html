@@ -267,47 +267,128 @@
                     );
                 }
 
-                // 메인 검색 함수
+                // 메인 검색 함수 - Phase 1 개선
                 async function executeSearch() {
-                    const query = searchInput.value;
+                    const query = searchInput.value.trim();
                     if (!query) {
                         alert("검색어를 입력해주세요.");
                         return;
                     }
+                    
+                    console.log(`🔍 Phase 1: "${query}" 검색 시작`);
                     searchText.classList.add('hidden');
                     loadingSpinner.classList.remove('hidden');
                     searchButton.disabled = true;
+                    
+                    // 상태 메시지 표시
+                    scoreText.textContent = "인기 관광지를 검색 중입니다...";
+                    scoreCircle.textContent = "🔍";
 
                     try {
+                        // Phase 1: 인기 관광지 검색
+                        console.log('📍 인기 관광지 API 호출...');
                         const spotsResponse = await fetch(`http://127.0.0.1:5000/api/popular-spots?query=${encodeURIComponent(query)}`);
+                        
+                        if (!spotsResponse.ok) {
+                            throw new Error(`서버 응답 오류: ${spotsResponse.status}`);
+                        }
+                        
                         const spots = await spotsResponse.json();
+                        console.log(`✅ 검색 결과: ${spots.length}개 관광지 발견`);
 
                         if (spots.length > 0) {
-                            let spotsHtml = '<h3 class="font-bold border-t pt-4 mt-4">이런 장소는 어떠세요?</h3><div class="flex flex-col space-y-2 mt-2">';
-                            spots.forEach(spot => {
-                                spotsHtml += `<button class="spot-button w-full text-left p-2 bg-gray-100 rounded hover:bg-green-100" data-spot-name="${spot.title}">${spot.title}</button>`;
+                            // Phase 1: 인기 관광지 목록 표시
+                            scoreText.textContent = `"${query}" 지역의 인기 관광지`;
+                            scoreCircle.textContent = "📍";
+                            
+                            let spotsHtml = '<h3 class="font-bold text-green-600 border-t pt-4 mt-4">🏆 인기 관광지를 선택하세요</h3>';
+                            spotsHtml += '<p class="text-sm text-gray-500 mb-2">클릭하면 해당 장소의 안전도를 확인할 수 있습니다</p>';
+                            spotsHtml += '<div class="flex flex-col space-y-2">';
+                            
+                            spots.forEach((spot, index) => {
+                                spotsHtml += `
+                                    <button class="spot-button w-full text-left p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg hover:from-green-100 hover:to-blue-100 transition-all shadow-sm hover:shadow-md" 
+                                            data-spot-name="${spot.title}">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span class="font-semibold text-gray-800">${index + 1}. ${spot.title}</span>
+                                                ${spot.address ? `<div class="text-xs text-gray-500 mt-1">📍 ${spot.address}</div>` : ''}
+                                            </div>
+                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                        </div>
+                                    </button>
+                                `;
                             });
+                            
                             spotsHtml += '</div>';
+                            spotsHtml += `
+                                <div class="mt-4 p-3 bg-yellow-50 rounded-lg">
+                                    <p class="text-xs text-yellow-800">
+                                        💡 Tip: 직접 장소명을 입력하셔도 안전도를 확인할 수 있습니다
+                                    </p>
+                                </div>
+                            `;
                             infoDetails.innerHTML = spotsHtml;
                             
+                            // 각 버튼에 이벤트 리스너 추가
                             document.querySelectorAll('.spot-button').forEach(button => {
                                 button.addEventListener('click', (event) => {
-                                    const spotName = event.target.getAttribute('data-spot-name');
-                                    getScoreForSpot(spotName); 
+                                    const spotButton = event.currentTarget;
+                                    const spotName = spotButton.getAttribute('data-spot-name');
+                                    console.log(`📍 "${spotName}" 선택됨`);
+                                    
+                                    // 선택된 버튼 표시
+                                    document.querySelectorAll('.spot-button').forEach(btn => {
+                                        btn.classList.remove('bg-green-100');
+                                    });
+                                    spotButton.classList.add('bg-green-100');
+                                    
+                                    // 안전 점수 계산
+                                    getScoreForSpot(spotName);
                                 });
                             });
                             
-                            searchText.classList.remove('hidden');
-                            loadingSpinner.classList.add('hidden');
-                            searchButton.disabled = false;
-
                         } else {
-                            getScoreForSpot(query);
+                            // 인기 관광지가 없으면 직접 검색
+                            console.log('⚠️ 인기 관광지 없음, 직접 검색 진행');
+                            scoreText.textContent = `"${query}" 직접 검색 중...`;
+                            
+                            // 안내 메시지 표시
+                            infoDetails.innerHTML = `
+                                <div class="p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-sm text-blue-800">
+                                        🔍 "${query}"의 인기 관광지를 찾을 수 없어 직접 검색합니다...
+                                    </p>
+                                </div>
+                            `;
+                            
+                            // 직접 장소 검색
+                            setTimeout(() => {
+                                getScoreForSpot(query);
+                            }, 500);
                         }
-                    } catch (error) {
-                        console.error('Popular spots fetch error:', error);
-                        alert("인기 관광지 정보를 불러오는 데 실패했습니다.");
                         
+                    } catch (error) {
+                        console.error('❌ Phase 1 오류:', error);
+                        
+                        // 오류 발생 시 직접 검색으로 폴백
+                        infoDetails.innerHTML = `
+                            <div class="p-4 bg-orange-50 rounded-lg mb-4">
+                                <p class="text-sm text-orange-800">
+                                    ⚠️ 인기 관광지 검색 중 문제가 발생했습니다.<br>
+                                    직접 장소를 검색합니다...
+                                </p>
+                            </div>
+                        `;
+                        
+                        // 직접 검색 시도
+                        setTimeout(() => {
+                            getScoreForSpot(query);
+                        }, 1000);
+                        
+                    } finally {
                         searchText.classList.remove('hidden');
                         loadingSpinner.classList.add('hidden');
                         searchButton.disabled = false;
