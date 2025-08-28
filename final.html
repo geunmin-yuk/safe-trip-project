@@ -55,20 +55,17 @@
     </div>
 
     <!-- 3. 우리 웹사이트의 뇌 (JavaScript) -->
-    <script>
+       <script>
         kakao.maps.load(() => {
-            // 지도 초기화 (setTimeout은 안정적인 로딩을 위해 유지)
             setTimeout(() => {
                 const mapContainer = document.getElementById('map'); 
                 const mapOption = { 
-                    center: new kakao.maps.LatLng(37.566826, 126.9786567), // 서울 중심
+                    center: new kakao.maps.LatLng(37.566826, 126.9786567),
                     level: 7
                 };
                 const map = new kakao.maps.Map(mapContainer, mapOption); 
                 
-                // 마커와 원을 관리할 변수
                 let markers = [];
-                let circle = null;
 
                 // HTML 요소 가져오기
                 const searchInput = document.getElementById('search-input');
@@ -79,37 +76,25 @@
                 const loadingSpinner = document.getElementById('loading-spinner');
                 const searchText = document.getElementById('search-text');
 
-                // 검색 실행 함수 (백엔드 연동 버전)
-                async function executeSearch() {
-                    const query = searchInput.value;
-                    if (!query) {
-                        alert("검색어를 입력해주세요.");
-                        return;
-                    }
-
-                    // --- 1. 로딩 시작 ---
+                // --- 새로운 함수: 특정 장소의 안전 점수를 가져오는 함수 ---
+                async function getScoreForSpot(spotName) {
                     searchText.classList.add('hidden');
                     loadingSpinner.classList.remove('hidden');
                     searchButton.disabled = true;
 
                     try {
-                        // --- 2. 우리 백엔드 서버에 점수 요청! ---
-                        const response = await fetch(`http://127.0.0.1:5000/api/score?query=${encodeURIComponent(query)}`);
-                        
-                        if (!response.ok) {
-                            throw new Error('서버에서 응답을 받지 못했습니다.');
-                        }
+                        const response = await fetch(`http://127.0.0.1:5000/api/score?query=${encodeURIComponent(spotName)}`);
+                        if (!response.ok) throw new Error('서버 응답 실패');
                         
                         const result = await response.json();
-
                         if (result.error) {
                             alert(`오류: ${result.error}`);
+                            infoDetails.innerHTML = ''; // 오류 시 상세 정보 초기화
                         } else {
-                            // --- 3. 성공! 서버에서 받은 진짜 데이터로 화면 업데이트 ---
+                            // --- 기존의 화면 업데이트 로직 ---
                             const moveLatLng = new kakao.maps.LatLng(result.location_lat, result.location_lon);
                             map.setCenter(moveLatLng);
                             map.relayout();
-
                             scoreCircle.textContent = result.safety_score;
                             scoreText.textContent = `${result.searched_location}의 안전 점수`;
                             
@@ -119,15 +104,11 @@
                             else scoreColorClasses = "bg-red-100 text-red-600";
                             scoreCircle.className = `mx-auto w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold transition-all duration-500 ${scoreColorClasses}`;
                             
-                            markers.forEach(marker => marker.setMap(null));
-                            markers = [];
-                            if (circle) circle.setMap(null);
-
                             let travelTimeText = result.travel_time_seconds > 0 ? 
                                 `${Math.floor(result.travel_time_seconds / 60)}분 ${result.travel_time_seconds % 60}초` : '정보 없음';
                             
                             let detailsHtml = '<h3 class="font-bold border-t pt-4 mt-4">주요 안심 정보</h3><ul class="list-disc pl-5 mt-2 text-gray-700 space-y-1">';
-                            detailsHtml += `<li>🚑 가장 가까운 응급실: ${travelTimeText} 소요 (가정)</li>`;
+                            detailsHtml += `<li>🚑 가장 가까운 응급실: ${travelTimeText} (${result.nearest_er})</li>`;
                             detailsHtml += `<li>❤️ 주변 AED 개수: ${result.nearby_aeds_total}개</li>`;
                             detailsHtml += '</ul>';
                             infoDetails.innerHTML = detailsHtml;
@@ -136,14 +117,53 @@
                         console.error('Fetch Error:', error);
                         alert("데이터를 불러오는 데 실패했습니다. 백엔드 서버가 켜져있는지 확인해주세요.");
                     } finally {
-                        // --- 4. 로딩 종료 ---
                         searchText.classList.remove('hidden');
                         loadingSpinner.classList.add('hidden');
                         searchButton.disabled = false;
                     }
                 }
 
-                // 이벤트 리스너 연결
+                // --- 메인 검색 함수 (이제 인기 관광지를 먼저 찾습니다) ---
+                async function executeSearch() {
+                    const query = searchInput.value;
+                    if (!query) {
+                        alert("검색어를 입력해주세요.");
+                        return;
+                    }
+                    searchText.classList.add('hidden');
+                    loadingSpinner.classList.remove('hidden');
+                    searchButton.disabled = true;
+
+                    // 1. 인기 관광지 목록을 먼저 요청
+                    const spotsResponse = await fetch(`http://127.0.0.1:5000/api/popular-spots?query=${encodeURIComponent(query)}`);
+                    const spots = await spotsResponse.json();
+
+                    if (spots.length > 0) {
+                        // 2. 관광지 목록을 버튼으로 표시
+                        let spotsHtml = '<h3 class="font-bold border-t pt-4 mt-4">이런 장소는 어떠세요?</h3><div class="flex flex-col space-y-2 mt-2">';
+                        spots.forEach(spot => {
+                            // 각 버튼에 spot의 이름을 데이터로 저장
+                            spotsHtml += `<button class="spot-button w-full text-left p-2 bg-gray-100 rounded hover:bg-green-100" data-spot-name="${spot.title}">${spot.title}</button>`;
+                        });
+                        spotsHtml += '</div>';
+                        infoDetails.innerHTML = spotsHtml;
+                        
+                        // 3. 동적으로 생성된 버튼에 클릭 이벤트 추가
+                        document.querySelectorAll('.spot-button').forEach(button => {
+                            button.addEventListener('click', (event) => {
+                                const spotName = event.target.getAttribute('data-spot-name');
+                                getScoreForSpot(spotName); // 점수 조회 함수 호출
+                            });
+                        });
+
+                    } else {
+                        // 4. 인기 관광지가 없으면 바로 점수 조회
+                        getScoreForSpot(query);
+                    }
+
+                    // 로딩 종료는 getScoreForSpot 함수에서 처리하므로 여기서는 제거
+                }
+
                 searchButton.addEventListener('click', executeSearch);
                 searchInput.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') executeSearch();
@@ -154,4 +174,5 @@
     </script>
 </body>
 </html>
+
 
