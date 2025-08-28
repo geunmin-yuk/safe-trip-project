@@ -19,7 +19,7 @@
             <h1 class="text-2xl font-bold text-green-600 mb-2">안심여행 스텝 🗺️</h1>
             <p class="text-gray-600 mb-4">어디로 떠나시나요? 여행지의 안전 점수를 확인해보세요!</p>
             <div class="flex">
-                <input id="search-input" type="text" placeholder="예: 설악산, 해운대, 제주도, 경주" class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                <input id="search-input" type="text" placeholder="예: 경복궁, 해운대, 충남대학교" class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                 <button id="search-button" class="bg-green-600 text-white font-bold p-2 rounded-r-lg hover:bg-green-700 w-24 flex items-center justify-center">
                     <span id="search-text">검색</span>
                     <svg id="loading-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -31,9 +31,8 @@
         </div>
 
         <!-- 2. 지도와 정보창 영역 -->
-        <!-- [수정된 부분!] HTML 순서를 바꾸고 flex-col-reverse를 유지하여 원하는 반응형 레이아웃을 구현합니다. -->
         <div class="flex flex-col-reverse md:flex-row gap-4">
-            <!-- 지도 (HTML 순서를 정보창보다 위로 옮겼습니다) -->
+            <!-- 지도 -->
             <div id="map" class="w-full md:w-2/3 bg-white rounded-lg shadow-md" style="height:500px;">
                 <!-- 이 공간은 스크립트에 의해 지도로 채워집니다. -->
             </div>
@@ -55,17 +54,20 @@
     </div>
 
     <!-- 3. 우리 웹사이트의 뇌 (JavaScript) -->
-       <script>
+    <script>
         kakao.maps.load(() => {
+            // 지도 초기화 (setTimeout은 안정적인 로딩을 위해 유지)
             setTimeout(() => {
                 const mapContainer = document.getElementById('map'); 
                 const mapOption = { 
-                    center: new kakao.maps.LatLng(37.566826, 126.9786567),
+                    center: new kakao.maps.LatLng(37.566826, 126.9786567), // 서울 중심
                     level: 7
                 };
                 const map = new kakao.maps.Map(mapContainer, mapOption); 
                 
+                // 마커와 원을 관리할 변수
                 let markers = [];
+                let circle = null;
 
                 // HTML 요소 가져오기
                 const searchInput = document.getElementById('search-input');
@@ -104,6 +106,10 @@
                             else scoreColorClasses = "bg-red-100 text-red-600";
                             scoreCircle.className = `mx-auto w-32 h-32 rounded-full flex items-center justify-center text-4xl font-bold transition-all duration-500 ${scoreColorClasses}`;
                             
+                            markers.forEach(marker => marker.setMap(null));
+                            markers = [];
+                            if (circle) circle.setMap(null);
+
                             let travelTimeText = result.travel_time_seconds > 0 ? 
                                 `${Math.floor(result.travel_time_seconds / 60)}분 ${result.travel_time_seconds % 60}초` : '정보 없음';
                             
@@ -156,14 +162,19 @@
                             });
                         });
 
+                        // 로딩 종료는 getScoreForSpot 함수에서 처리하므로 여기서는 별도로 처리하지 않음
+                        // 단, 관광지 목록만 보여주고 멈추므로 로딩 상태를 풀어줘야 함
+                        searchText.classList.remove('hidden');
+                        loadingSpinner.classList.add('hidden');
+                        searchButton.disabled = false;
+
                     } else {
                         // 4. 인기 관광지가 없으면 바로 점수 조회
                         getScoreForSpot(query);
                     }
-
-                    // 로딩 종료는 getScoreForSpot 함수에서 처리하므로 여기서는 제거
                 }
 
+                // 이벤트 리스너 연결
                 searchButton.addEventListener('click', executeSearch);
                 searchInput.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') executeSearch();
@@ -174,5 +185,3 @@
     </script>
 </body>
 </html>
-
-
