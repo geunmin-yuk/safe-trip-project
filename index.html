@@ -24,7 +24,6 @@
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 </button>
-                <!-- Phase 3: 현재 위치 버튼 추가 -->
                 <button id="location-button" class="bg-blue-600 text-white font-bold p-2 rounded-lg hover:bg-blue-700 flex items-center justify-center px-4">
                     <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
@@ -54,6 +53,13 @@
     </div>
 
     <script>
+        // ⭐ 백엔드 URL 설정 (배포 후 Render URL로 변경)
+        // 예: https://safe-trip-backend.onrender.com
+        const BACKEND_URL = 'https://safe-trip-backend.onrender.com';  // ⚠️ 여기를 Render URL로 변경!
+        
+        // 로컬 테스트용 (개발 시)
+        // const BACKEND_URL = 'http://127.0.0.1:5000';
+        
         kakao.maps.load(() => {
             setTimeout(() => {
                 const mapContainer = document.getElementById('map'); 
@@ -63,7 +69,6 @@
                 };
                 const map = new kakao.maps.Map(mapContainer, mapOption); 
                 
-                // Phase 2: 마커 관리를 위한 배열 및 아이콘 설정
                 let currentMarkers = [];
                 
                 const icons = {
@@ -84,7 +89,6 @@
                     )
                 };
 
-                // HTML 요소 가져오기
                 const searchInput = document.getElementById('search-input');
                 const searchButton = document.getElementById('search-button');
                 const locationButton = document.getElementById('location-button');
@@ -94,7 +98,6 @@
                 const loadingSpinner = document.getElementById('loading-spinner');
                 const searchText = document.getElementById('search-text');
 
-                // Phase 2: 모든 마커를 지도에서 제거하는 함수
                 function clearMarkers() {
                     for (let i = 0; i < currentMarkers.length; i++) {
                         currentMarkers[i].setMap(null);
@@ -102,7 +105,6 @@
                     currentMarkers = [];
                 }
 
-                // Phase 2: 마커와 인포윈도우를 생성하고 지도에 표시하는 함수
                 function displayMarkers(places, type) {
                     if (!places || places.length === 0) return;
 
@@ -134,15 +136,13 @@
                     return bounds;
                 }
 
-                // 특정 장소의 안전 점수를 가져오는 함수 (좌표 파라미터 추가)
                 async function getScoreForSpot(spotName, lat = null, lon = null) {
                     searchText.classList.add('hidden');
                     loadingSpinner.classList.remove('hidden');
                     searchButton.disabled = true;
 
                     try {
-                        // Phase 3: 좌표가 있으면 좌표 사용, 없으면 장소명 사용
-                        let url = 'http://127.0.0.1:5000/api/score';
+                        let url = `${BACKEND_URL}/api/score`;
                         if (lat && lon) {
                             url += `?lat=${lat}&lon=${lon}`;
                         } else {
@@ -157,7 +157,6 @@
                             alert(`오류: ${result.error}`);
                             infoDetails.innerHTML = ''; 
                         } else {
-                            // 화면 업데이트
                             scoreCircle.textContent = result.safety_score;
                             scoreText.textContent = `${result.searched_location}의 안전 점수`;
                             
@@ -176,11 +175,9 @@
                             detailsHtml += '</ul>';
                             infoDetails.innerHTML = detailsHtml;
 
-                            // Phase 2: 지도 시각화
                             clearMarkers();
                             const bounds = new kakao.maps.LatLngBounds();
 
-                            // 검색된 위치 마커
                             const locationPosition = new kakao.maps.LatLng(result.location_lat, result.location_lon);
                             const locationMarker = new kakao.maps.Marker({
                                 map: map,
@@ -190,13 +187,11 @@
                             currentMarkers.push(locationMarker);
                             bounds.extend(locationPosition);
 
-                            // AED 마커
                             if (result.aeds && result.aeds.length > 0) {
                                 displayMarkers(result.aeds, 'aed');
                                 result.aeds.forEach(aed => bounds.extend(new kakao.maps.LatLng(aed.lat, aed.lon)));
                             }
 
-                            // 병원 마커
                             if (result.ers && result.ers.length > 0) {
                                 displayMarkers(result.ers, 'er');
                                 result.ers.forEach(er => bounds.extend(new kakao.maps.LatLng(er.lat, er.lon)));
@@ -215,7 +210,6 @@
                     }
                 }
 
-                // Phase 3: 현재 위치 가져오기 함수
                 function getCurrentLocation() {
                     if (!navigator.geolocation) {
                         alert("브라우저가 위치 정보를 지원하지 않습니다.");
@@ -230,12 +224,10 @@
                             const lat = position.coords.latitude;
                             const lon = position.coords.longitude;
                             
-                            // 현재 위치로 지도 이동
                             const currentPos = new kakao.maps.LatLng(lat, lon);
                             map.setCenter(currentPos);
                             map.setLevel(5);
                             
-                            // 안전 점수 계산
                             getScoreForSpot("현재 위치", lat, lon);
                             
                             locationButton.disabled = false;
@@ -267,7 +259,6 @@
                     );
                 }
 
-                // 메인 검색 함수 - Phase 1 개선
                 async function executeSearch() {
                     const query = searchInput.value.trim();
                     if (!query) {
@@ -280,14 +271,12 @@
                     loadingSpinner.classList.remove('hidden');
                     searchButton.disabled = true;
                     
-                    // 상태 메시지 표시
                     scoreText.textContent = "인기 관광지를 검색 중입니다...";
                     scoreCircle.textContent = "🔍";
 
                     try {
-                        // Phase 1: 인기 관광지 검색
                         console.log('📍 인기 관광지 API 호출...');
-                        const spotsResponse = await fetch(`http://127.0.0.1:5000/api/popular-spots?query=${encodeURIComponent(query)}`);
+                        const spotsResponse = await fetch(`${BACKEND_URL}/api/popular-spots?query=${encodeURIComponent(query)}`);
                         
                         if (!spotsResponse.ok) {
                             throw new Error(`서버 응답 오류: ${spotsResponse.status}`);
@@ -297,7 +286,6 @@
                         console.log(`✅ 검색 결과: ${spots.length}개 관광지 발견`);
 
                         if (spots.length > 0) {
-                            // Phase 1: 인기 관광지 목록 표시
                             scoreText.textContent = `"${query}" 지역의 인기 관광지`;
                             scoreCircle.textContent = "📍";
                             
@@ -332,30 +320,25 @@
                             `;
                             infoDetails.innerHTML = spotsHtml;
                             
-                            // 각 버튼에 이벤트 리스너 추가
                             document.querySelectorAll('.spot-button').forEach(button => {
                                 button.addEventListener('click', (event) => {
                                     const spotButton = event.currentTarget;
                                     const spotName = spotButton.getAttribute('data-spot-name');
                                     console.log(`📍 "${spotName}" 선택됨`);
                                     
-                                    // 선택된 버튼 표시
                                     document.querySelectorAll('.spot-button').forEach(btn => {
                                         btn.classList.remove('bg-green-100');
                                     });
                                     spotButton.classList.add('bg-green-100');
                                     
-                                    // 안전 점수 계산
                                     getScoreForSpot(spotName);
                                 });
                             });
                             
                         } else {
-                            // 인기 관광지가 없으면 직접 검색
                             console.log('⚠️ 인기 관광지 없음, 직접 검색 진행');
                             scoreText.textContent = `"${query}" 직접 검색 중...`;
                             
-                            // 안내 메시지 표시
                             infoDetails.innerHTML = `
                                 <div class="p-4 bg-blue-50 rounded-lg">
                                     <p class="text-sm text-blue-800">
@@ -364,7 +347,6 @@
                                 </div>
                             `;
                             
-                            // 직접 장소 검색
                             setTimeout(() => {
                                 getScoreForSpot(query);
                             }, 500);
@@ -373,7 +355,6 @@
                     } catch (error) {
                         console.error('❌ Phase 1 오류:', error);
                         
-                        // 오류 발생 시 직접 검색으로 폴백
                         infoDetails.innerHTML = `
                             <div class="p-4 bg-orange-50 rounded-lg mb-4">
                                 <p class="text-sm text-orange-800">
@@ -383,7 +364,6 @@
                             </div>
                         `;
                         
-                        // 직접 검색 시도
                         setTimeout(() => {
                             getScoreForSpot(query);
                         }, 1000);
@@ -395,12 +375,10 @@
                     }
                 }
 
-                // 이벤트 리스너
                 searchButton.addEventListener('click', executeSearch);
                 searchInput.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') executeSearch();
                 });
-                // Phase 3: 현재 위치 버튼 이벤트 리스너
                 locationButton.addEventListener('click', getCurrentLocation);
 
             }, 100);
